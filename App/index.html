@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Táxis NYC - 2019/2020</title>
+    <link rel="icon" href="data:,">
+    <!-- Google Fonts - Inter (Corporate Typography) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/dist/duckdb-mvp.wasm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/dist/duckdb-browser-mvp.worker.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Análise de Corridas de Táxi em NYC</h1>
+            <h2>Comparação 2019 (Pré-Pandemia) vs 2020 (Pandemia) - OUT/NOV/DEZ</h2>
+        </header>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Carregando dados...</p>
+            <div id="progress"></div>
+        </div>
+
+        <section id="controls" style="display: none;">
+            <div class="control-panel">
+                <h3>⚙️ Controles de Análise</h3>
+                <div class="control-group">
+                    <label for="yearSelect">Ano:</label>
+                    <select id="yearSelect">
+                        <option value="both">Comparar 2019 vs 2020</option>
+                        <option value="2019">2019 (Pré-Pandemia)</option>
+                        <option value="2020">2020 (Pandemia)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="monthSelect">Mês:</label>
+                    <select id="monthSelect">
+                        <option value="all">Todos os meses (Out, Nov, Dez)</option>
+                        <option value="10">Outubro</option>
+                        <option value="11">Novembro</option>
+                        <option value="12">Dezembro</option>
+                    </select>
+                </div>
+                
+                <div class="section-selector-box">
+                    <h4>📊 Seções para Carregar (otimização de memória)</h4>
+                    <p>Selecione apenas as análises que deseja visualizar para economizar memória:</p>
+                    <div class="checkbox-grid">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="section-quality" class="section-checkbox" checked>
+                            <span>1. Qualidade dos Dados</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="section-temporal" class="section-checkbox" checked>
+                            <span>2. Análise Temporal</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="section-trip" class="section-checkbox" checked>
+                            <span>3. Perfil de Viagem</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="section-fare" class="section-checkbox" checked>
+                            <span>4. Análise de Tarifas</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="section-payment" class="section-checkbox" checked>
+                            <span>5. Métodos de Pagamento</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="section-pandemic" class="section-checkbox" checked>
+                            <span>6. Impacto da Pandemia</span>
+                        </label>
+                    </div>
+                    <div class="button-group">
+                        <button id="selectAllBtn" class="btn-secondary">✅ Selecionar Todas</button>
+                        <button id="selectNoneBtn" class="btn-secondary">❌ Desmarcar Todas</button>
+                    </div>
+                </div>
+                
+                <button id="refreshBtn" class="btn-primary" style="margin-top: var(--spacing-lg);">🔄 Carregar Seções Selecionadas</button>
+            </div>
+        </section>
+
+        <section id="data-quality" style="display: none;">
+            <h2>1. Qualidade dos Dados</h2>
+            <div class="viz-container">
+                <div class="viz-item">
+                    <h3>Distribuição de Registros por Mês</h3>
+                    <div id="records-by-month"></div>
+                </div>
+                <div class="viz-item">
+                    <h3>Estatísticas de Qualidade</h3>
+                    <div id="data-quality-chart"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Registros Removidos por Regra de Limpeza</h3>
+                    <div id="data-removal-stats"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="temporal-analysis" style="display: none;">
+            <h2>2. Análise Temporal - Dinâmica da Demanda</h2>
+            <div class="viz-container">
+                <div class="viz-item full-width">
+                    <h3>Heatmap: Padrão Hora x Dia da Semana (2019 vs 2020)</h3>
+                    <div id="hour-day-heatmap"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Corridas por Hora do Dia</h3>
+                    <div id="hourly-pattern"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Corridas por Dia da Semana</h3>
+                    <div id="weekly-pattern"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Tendência Mensal</h3>
+                    <div id="monthly-trend"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="trip-profile" style="display: none;">
+            <h2>3. Perfil de Viagem - Distância e Passageiros</h2>
+            <div class="viz-container">
+                <div class="viz-item full-width">
+                    <h3>Histograma de Distância das Viagens</h3>
+                    <div id="distance-histogram"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Distribuição de Passageiros por Viagem</h3>
+                    <div id="passenger-distribution"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="fare-analysis" style="display: none;">
+            <h2>4. Análise de Tarifas - Composição e Distribuição</h2>
+            <div class="viz-container">
+                <div class="viz-item">
+                    <h3>Composição Média das Tarifas (Componentes)</h3>
+                    <div id="fare-composition"></div>
+                </div>
+                <div class="viz-item">
+                    <h3>Distribuição por Faixa de Valor</h3>
+                    <div id="fare-distribution"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Correlação: Distância vs Tarifa</h3>
+                    <div class="info-note" style="background: #e3f2fd; padding: 10px 12px; border-radius: 6px; margin-bottom: 15px; line-height: 1.5; font-size: 14px;">
+                        <strong>ℹ️ Otimização:</strong> Os dados são agregados em bins de 0.1 milhas para melhor desempenho. 
+                        O <strong>tamanho dos círculos</strong> representa o volume de viagens em cada faixa de distância.
+                    </div>
+                    <div id="distance-fare-correlation"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="payment-analysis" style="display: none;">
+            <h2>5. Métodos de Pagamento e Gorjetas</h2>
+            <div class="viz-container">
+                <div class="viz-item">
+                    <h3>Distribuição por Tipo de Pagamento</h3>
+                    <div id="payment-distribution"></div>
+                </div>
+                <div class="viz-item">
+                    <h3>Gorjetas Médias por Método de Pagamento (Separado por Tipo)</h3>
+                    <div id="tips-by-payment"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Tendência: % Pagamentos com Cartão ao Longo do Tempo</h3>
+                    <div id="payment-trend"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pandemic-impact" style="display: none;">
+            <h2>6. Impacto da Pandemia - Comparação 2019 vs 2020</h2>
+            <div class="viz-container">
+                <div class="viz-item full-width">
+                    <h3>Comparação de Volume de Viagens por Mês</h3>
+                    <div id="pandemic-volume"></div>
+                </div>
+                <div class="viz-item full-width">
+                    <h3>Mudanças de Comportamento (Métricas Agregadas)</h3>
+                    <div id="behavior-changes"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Análise desenvolvida com DuckDB e D3.js | Dados: NYC Taxi & Limousine Commission</p>
+        </footer>
+    </div>
+
+    <script type="module" src="data-loader.js"></script>
+    <script src="visualizations-1.js"></script>
+    <script src="visualizations-2.js"></script>
+    <script src="visualizations-3.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
