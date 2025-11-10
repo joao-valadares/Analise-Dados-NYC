@@ -63,7 +63,7 @@ function visualizeRecordsByMonth(data) {
     const groupedData = d3.group(cleanData, d => d.month);
     
     const chartData = Array.from(groupedData, ([month, values]) => ({
-        month: monthNames[month - 7],
+        month: monthNames[month - 10], // Corrigido: 10->0, 11->1, 12->2
         y2019: toNumber(values.find(v => v.year === 2019)?.count || 0),
         y2020: toNumber(values.find(v => v.year === 2020)?.count || 0)
     }));
@@ -508,7 +508,7 @@ function visualizeMonthlyTrend(data) {
     
     const monthNames = ['Out', 'Nov', 'Dez'];
     cleanData.forEach(d => {
-        d.monthName = monthNames[d.month - 1];
+        d.monthName = monthNames[d.month - 10]; // Corrigido: 10->0, 11->1, 12->2
         d.label = `${d.monthName} ${d.year}`;
     });
     

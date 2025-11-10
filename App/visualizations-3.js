@@ -192,7 +192,7 @@ function visualizePandemicVolume(data) {
         const trips2019 = toNumber(d2019?.trips || 0);
         const trips2020 = toNumber(d2020?.trips || 0);
         return {
-            month: monthNames[month - 7],
+            month: monthNames[month - 10], // Corrigido: 10->0, 11->1, 12->2
             trips2019: trips2019,
             trips2020: trips2020,
             diff: ((trips2020) - (trips2019)) / (trips2019 || 1) * 100
@@ -774,7 +774,7 @@ function visualizePaymentTrend(data) {
     const dataByYear = d3.group(cleanData, d => d.year);
     
     // Obter apenas os meses disponíveis
-    const availableMonths = [...new Set(cleanData.map(d => monthNames[d.month - 1]))];
+    const availableMonths = [...new Set(cleanData.map(d => monthNames[d.month - 10]))];
     
     // Escalas
     const x = d3.scaleBand()
@@ -820,7 +820,7 @@ function visualizePaymentTrend(data) {
             .filter(d => d.payment_name === 'Cartão')
             .map(d => ({
                 ...d,
-                monthName: monthNames[d.month - 1]
+                monthName: monthNames[d.month - 10] // Corrigido: 10->0, 11->1, 12->2
             }))
             .sort((a, b) => a.month - b.month);
         
