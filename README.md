@@ -50,21 +50,17 @@ Sistema de análise comparativa de corridas de táxis amarelos de NYC entre 2019
 1. Baixar os dados originais: [NYC TLC Trip Records](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
 2. Colocar os arquivos Parquet em:
    ```
-   Data/2019/yellow_tripdata_2019-{07-12}.parquet
-   Data/2020/yellow_tripdata_2020-{07-12}.parquet
+   Data/2019/yellow_tripdata_2019-{10-12}.parquet
+   Data/2020/yellow_tripdata_2020-{10-12}.parquet
    ```
 
 ### Execução
 
-#### PowerShell (Windows)
+#### LiveServer (VSCode)
 ```powershell
-cd "caminho\do\projeto"
-python -m http.server 8000
-# ou
-php -S localhost:8000
+Inicie o LiveServer do HTML
 ```
-
-Acesse: `http://localhost:8000/App/index.html`
+Acesse: `http://localhost:5000/App/index.html`
 
 ### ⚠️ Importante
 - **Desabilite** o Tracking Prevention do navegador (necessário para DuckDB via CDN)
@@ -78,14 +74,14 @@ O sistema aplica **10 conjuntos de regras** via views do DuckDB:
 1. ✅ **Colunas essenciais nulas** - Remove registros sem campos obrigatórios
 2. ✅ **Duplicatas** - Detecta via MD5(VendorID, datetime, location, amount)
 3. ✅ **Timestamps inválidos** - Dropoff > Pickup, duração 0-240 min
-4. ✅ **Distância** - Entre 0 e 100 milhas
+4. ✅ **Distância** - Entre 0.01 e 100 milhas
 5. ✅ **Passageiros** - Entre 1 e 6
 6. ✅ **Valores monetários** - Total e fare > 0
 7. ✅ **Códigos válidos** - payment_type (1-6), RatecodeID (1-6,99), LocationID (1-263)
-8. ✅ **Velocidade** - Entre 1 e 80 mph
+8. ✅ **Velocidade média** - Entre 1 e 80 mph
 9. ✅ **Consistência** - Diferença total_amount vs soma < $2.00
 
-**Resultado:** Mantém ~85-90% dos registros originais
+**Resultado:** Mantém ~96% dos registros originais
 
 ## 📁 Estrutura do Projeto
 
@@ -102,9 +98,6 @@ Análise dados Taxi NYC/
 ├── Data/
 │   ├── 2019/                   # Parquet 2019
 │   └── 2020/                   # Parquet 2020
-└── Docs/
-    ├── DOCUMENTACAO_SISTEMA.md # Documentação técnica completa
-    └── ...
 ```
 
 ## 🛠️ Stack Tecnológica
@@ -116,10 +109,10 @@ Análise dados Taxi NYC/
 
 ## 📊 Volume de Dados
 
-- **Período:** 2º semestre 2019 + 2º semestre 2020
-- **Registros brutos:** ~20-30 milhões
-- **Após limpeza:** ~17-27 milhões (85-90%)
-- **Arquivos:** 12 Parquet (~1-3GB cada)
+- **Período:** 4º trimestre 2019 + 4º trimestre 2020
+- **Registros brutos:** ~25,6 milhões
+- **Após limpeza:** ~24,8 milhões (96.9%)
+- **Arquivos:** 6 Parquet
 
 ## 🎓 Análises Disponíveis
 
@@ -165,13 +158,6 @@ Este sistema permite responder questões como:
 - 📊 Qual a composição típica de uma tarifa?
 - 🧹 Quantos dados foram removidos pela limpeza?
 
-## 📚 Documentação
-
-- 📖 [Documentação Técnica Completa](Docs/DOCUMENTACAO_SISTEMA.md)
-- 📝 [Guia Rápido](Docs/GUIA_RAPIDO.md)
-- 🔧 [Como Baixar Dados](Docs/COMO_BAIXAR_DADOS.md)
-- ⚠️ [Troubleshooting](Docs/TROUBLESHOOTING.md)
-
 ## 🐛 Troubleshooting Comum
 
 ### DuckDB não carrega
@@ -185,22 +171,3 @@ Este sistema permite responder questões como:
 - Use servidor local (não abra arquivo diretamente)
 - Filtre por mês específico
 - Feche outras abas do navegador
-
-## 📄 Licença e Dados
-
-- **Código:** Projeto educacional
-- **Dados:** NYC Taxi & Limousine Commission (Open Data)
-- **Licença dos dados:** [NYC Open Data License](https://opendata.cityofnewyork.us/overview/)
-
-## 🙏 Créditos
-
-- **NYC TLC** - Dados originais
-- **DuckDB** - Motor analítico
-- **D3.js** - Biblioteca de visualização
-- **Mike Bostock** - Criador do D3.js
-
----
-
-**Desenvolvido para:** Análise de Dados - Visualização de Dados  
-**Data:** Novembro 2025  
-**Tecnologias:** DuckDB + D3.js + JavaScript
