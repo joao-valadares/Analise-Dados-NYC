@@ -1,49 +1,8 @@
-// Visualizações D3.js
+// Visualizações D3.js - Análise Temporal
 
-const colors = {
-    primary: '#667eea',
-    secondary: '#764ba2',
-    year2019: '#4CAF50',
-    year2020: '#f44336',
-    gradient: ['#667eea', '#764ba2', '#f093fb', '#4facfe'],
-    payment: ['#667eea', '#4CAF50', '#FF9800', '#f44336', '#9E9E9E']
-};
-
-// Converter BigInt para Number (DuckDB retorna BigInt)
-function toNumber(value) {
-    if (typeof value === 'bigint') {
-        return Number(value);
-    }
-    return value;
-}
-
-// Converter objeto com BigInt para números
-function convertBigInt(obj) {
-    const newObj = {};
-    for (const key in obj) {
-        if (typeof obj[key] === 'bigint') {
-            newObj[key] = Number(obj[key]);
-        } else {
-            newObj[key] = obj[key];
-        }
-    }
-    return newObj;
-}
-
-// Criar tooltip
-function createTooltip() {
-    let tooltip = d3.select('.tooltip');
-    if (tooltip.empty()) {
-        tooltip = d3.select('body')
-            .append('div')
-            .attr('class', 'tooltip')
-            .style('opacity', 0);
-    }
-    return tooltip;
-}
-
-// 2. Padrão por hora do dia
+// Padrão por hora do dia
 function visualizeHourlyPattern(data) {
+    const { toNumber, convertBigInt, createTooltip, colors } = window.Utils;
     const container = d3.select('#hourly-pattern');
     container.selectAll('*').remove();
     
@@ -187,8 +146,9 @@ function visualizeHourlyPattern(data) {
         .text('Número de Viagens');
 }
 
-// 3. Padrão semanal
+// Padrão semanal
 function visualizeWeeklyPattern(data) {
+    const { toNumber, convertBigInt, createTooltip, colors } = window.Utils;
     const container = d3.select('#weekly-pattern');
     container.selectAll('*').remove();
     
@@ -202,22 +162,15 @@ function visualizeWeeklyPattern(data) {
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
     
-    // Preparar dados (converter BigInt) e validar
-    // Filtro de ano não é mais necessário - dados já vêm filtrados da VIEW clean_trips
     const cleanData = data.map(convertBigInt).map(d => ({
         day_name: d.day_name,
         day_of_week: toNumber(d.day_of_week),
         year: toNumber(d.year),
         trips: toNumber(d.trips),
         avg_fare: toNumber(d.avg_fare) || 0
-    })).filter(d => {
-        return d.day_name && !isNaN(d.trips);
-    });
+    })).filter(d => d.day_name && !isNaN(d.trips));
     
-    if (cleanData.length === 0) {
-        console.error('Nenhum dado válido para padrão semanal');
-        return;
-    }
+    if (!cleanData.length) return;
     
     const daysOrder = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const groupedData = d3.group(cleanData, d => d.day_name);

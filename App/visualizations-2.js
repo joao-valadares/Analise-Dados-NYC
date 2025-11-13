@@ -1,20 +1,8 @@
-// Continuação das visualizações D3.js
-// (colors, toNumber, convertBigInt já estão definidos em visualizations-1.js)
+// Visualizações D3.js - Análise de Tarifas e Pagamentos
 
-function createTooltip() {
-    let tooltip = d3.select('.tooltip');
-    if (tooltip.empty()) {
-        tooltip = d3.select('body')
-            .append('div')
-            .attr('class', 'tooltip')
-            .style('opacity', 0);
-    }
-    return tooltip;
-}
-
-// 5. Composição de tarifas (Stacked Bar Chart) - COMPLETO com todos os componentes
+// Composição de tarifas (Stacked Bar Chart)
 function visualizeFareComposition(data) {
-    console.log('📊 visualizeFareComposition - Dados recebidos:', data);
+    const { toNumber, convertBigInt, createTooltip, colors } = window.Utils;
     
     const container = d3.select('#fare-composition');
     container.selectAll('*').remove();
@@ -29,15 +17,8 @@ function visualizeFareComposition(data) {
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
     
-    // Preparar dados (converter BigInt) - TODOS os componentes
-    // Filtro de ano não é mais necessário - dados já vêm filtrados da VIEW clean_trips
     const validData = data.map(convertBigInt);
-    console.log('📊 visualizeFareComposition - Dados recebidos:', validData);
-    
-    if (validData.length === 0) {
-        console.error('❌ Nenhum dado válido para composição de tarifas');
-        return;
-    }
+    if (!validData.length) return;
     
     const components = ['fare', 'extra', 'mta_tax', 'tip', 'tolls', 'improvement_surcharge', 'congestion_surcharge', 'airport_fee'];
     const componentNames = {
@@ -335,21 +316,13 @@ function visualizePaymentDistribution(data) {
         .text('Tarifa Total ($)');
 }
 
-// 8. Distribuição de pagamentos (Donut Chart)
+// Distribuição de pagamentos (Donut Chart)
 function visualizePaymentDistribution(data) {
-    console.log('📊 visualizePaymentDistribution - Dados recebidos:', data);
-    
+    const { toNumber, convertBigInt, createTooltip, colors } = window.Utils;
     const container = d3.select('#payment-distribution');
     container.selectAll('*').remove();
     
-    if (!data || data.length === 0) {
-        console.error('❌ Nenhum dado para distribuição de pagamento');
-        container.append('p')
-            .style('text-align', 'center')
-            .style('padding', '50px')
-            .text('Nenhum dado disponível para esta visualização');
-        return;
-    }
+    if (!data || !data.length) return;
     
     const width = container.node().getBoundingClientRect().width;
     const height = 450;
@@ -367,7 +340,6 @@ function visualizePaymentDistribution(data) {
         const g = svg.append('g')
             .attr('transform', `translate(${gWidth * idx + gWidth/2}, ${height/2})`);
         
-        // Converter BigInt e filtrar dados do ano - APENAS DINHEIRO E CARTÃO
         const yearData = data
             .map(convertBigInt)
             .map(d => ({
@@ -378,21 +350,11 @@ function visualizePaymentDistribution(data) {
                 avg_amount: toNumber(d.avg_amount) || 0
             }))
             .filter(d => {
-                const isCashOrCard = d.payment_type === 1 || d.payment_type === 2; // 1=Cartão, 2=Dinheiro
+                const isCashOrCard = d.payment_type === 1 || d.payment_type === 2;
                 return d.year === year && d.count > 0 && !isNaN(d.count) && isCashOrCard;
             });
         
-        console.log(`📊 Dados para ${year}:`, yearData);
-        
-        // Se não há dados para este ano, mostrar mensagem
-        if (yearData.length === 0) {
-            g.append('text')
-                .attr('text-anchor', 'middle')
-                .attr('y', 0)
-                .style('font-size', '14px')
-                .text(`Sem dados para ${year}`);
-            return;
-        }
+        if (!yearData.length) return;
         
         const pie = d3.pie()
             .value(d => d.count)
@@ -461,22 +423,18 @@ function visualizePaymentDistribution(data) {
             .text(year);
     });
     
-    // Legenda centralizada - apenas tipos de pagamento válidos
     const legend = svg.append('g')
         .attr('class', 'legend')
         .attr('transform', `translate(${width/2 - 100}, ${height - 30})`);
     
-    // Obter tipos de pagamento únicos dos dados convertidos - APENAS DINHEIRO E CARTÃO
     const validData = data.map(convertBigInt).filter(d => {
         const count = toNumber(d.count);
         const paymentType = toNumber(d.payment_type);
-        const isCashOrCard = paymentType === 1 || paymentType === 2; // 1=Cartão, 2=Dinheiro
+        const isCashOrCard = paymentType === 1 || paymentType === 2;
         return count > 0 && isCashOrCard;
     });
     
     const uniquePayments = [...new Set(validData.map(d => d.payment_name))].filter(p => p);
-    
-    console.log('📊 Tipos de pagamento únicos:', uniquePayments);
     
     uniquePayments.forEach((payment, i) => {
         const lg = legend.append('g')

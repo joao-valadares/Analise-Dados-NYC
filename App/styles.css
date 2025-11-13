@@ -2,7 +2,7 @@
 
 /* CSS Variables - Design Tokens */
 :root {
-    /* Primary Colors - Corporate Blue Palette */
+    /* Primary Colors  */
     --primary-900: #0a2540;
     --primary-800: #0d3a5f;
     --primary-700: #104e7e;
@@ -11,7 +11,7 @@
     --primary-400: #42a5f5;
     --primary-300: #64b5f6;
     
-    /* Neutral Colors - Professional Gray Scale */
+    /* Neutral Colors  */
     --neutral-50: #fafafa;
     --neutral-100: #f5f5f5;
     --neutral-200: #eeeeee;
@@ -201,131 +201,7 @@ section h3 {
     font-weight: 500;
 }
 
-/* ==================== CONTROL PANEL ==================== */
-.control-panel {
-    background: linear-gradient(135deg, var(--primary-800) 0%, var(--primary-600) 100%);
-    padding: var(--spacing-xl);
-    border-radius: var(--radius-lg);
-    color: white;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--primary-700);
-}
 
-.control-panel h3 {
-    color: white;
-    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
-    font-weight: 600;
-    margin-bottom: var(--spacing-lg);
-    letter-spacing: -0.01em;
-}
-
-.control-group {
-    display: inline-block;
-    margin-right: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
-    vertical-align: top;
-}
-
-.control-group label {
-    display: block;
-    margin-bottom: var(--spacing-xs);
-    font-weight: 500;
-    font-size: 0.875rem;
-    opacity: 0.95;
-    letter-spacing: 0.01em;
-}
-
-.control-group select {
-    padding: 0.625rem var(--spacing-md);
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    font-size: 0.9375rem;
-    font-family: var(--font-primary);
-    background: white;
-    color: var(--neutral-800);
-    cursor: pointer;
-    min-width: 220px;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-sm);
-}
-
-.control-group select:hover {
-    border-color: var(--primary-400);
-    box-shadow: var(--shadow-md);
-}
-
-.control-group select:focus {
-    outline: none;
-    border-color: var(--primary-500);
-    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.15);
-}
-
-/* ==================== BUTTONS ==================== */
-.btn-primary {
-    background: white;
-    color: var(--primary-700);
-    border: 2px solid white;
-    padding: 0.75rem 2rem;
-    border-radius: var(--radius-md);
-    font-size: 0.9375rem;
-    font-weight: 600;
-    font-family: var(--font-primary);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-md);
-    letter-spacing: 0.01em;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    background: var(--neutral-50);
-}
-
-.btn-primary:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-sm);
-}
-
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--primary-700);
-    border: 2px solid rgba(255, 255, 255, 0.95);
-    padding: 0.625rem 1.25rem;
-    border-radius: var(--radius-md);
-    font-size: 0.875rem;
-    font-weight: 600;
-    font-family: var(--font-primary);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-sm);
-    letter-spacing: 0.01em;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--spacing-xs);
-}
-
-.btn-secondary:hover {
-    background: white;
-    border-color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-secondary:active {
-    transform: translateY(0);
-    box-shadow: var(--shadow-sm);
-}
-
-.section-checkbox {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--primary-500);
-}
 
 /* ==================== VISUALIZATION CONTAINERS ==================== */
 .viz-container {
@@ -480,21 +356,6 @@ footer {
         padding: var(--spacing-lg);
     }
     
-    .control-panel {
-        padding: var(--spacing-lg);
-    }
-    
-    .control-group {
-        display: block;
-        margin-right: 0;
-        margin-bottom: var(--spacing-md);
-    }
-    
-    .control-group select {
-        width: 100%;
-        min-width: unset;
-    }
-    
     .viz-item {
         padding: var(--spacing-lg);
     }
@@ -607,95 +468,7 @@ footer {
     letter-spacing: 0.01em;
 }
 
-/* ==================== ALERT & INFO BOXES ==================== */
-.info-box {
-    margin-top: var(--spacing-lg);
-    padding: var(--spacing-lg);
-    background: linear-gradient(135deg, #fff8e1 0%, #ffe082 100%);
-    border: 1px solid #ffd54f;
-    border-radius: var(--radius-md);
-    max-width: 650px;
-    margin-left: auto;
-    margin-right: auto;
-    box-shadow: var(--shadow-sm);
-}
 
-.info-box strong {
-    color: var(--neutral-900);
-    font-weight: 600;
-}
-
-.section-selector-box {
-    margin-top: var(--spacing-lg);
-    padding: var(--spacing-lg);
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border-radius: var(--radius-lg);
-    border: 1px solid #90caf9;
-}
-
-.section-selector-box h4 {
-    margin-top: 0;
-    color: var(--primary-800);
-    font-size: 1.125rem;
-    font-weight: 600;
-    margin-bottom: var(--spacing-sm);
-}
-
-.section-selector-box p {
-    font-size: 0.875rem;
-    color: var(--neutral-700);
-    margin-bottom: var(--spacing-md);
-}
-
-.checkbox-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    padding: var(--spacing-sm);
-    border-radius: var(--radius-sm);
-    transition: background var(--transition-fast);
-}
-
-.checkbox-label:hover {
-    background: rgba(255, 255, 255, 0.5);
-}
-
-.checkbox-label input {
-    margin-right: var(--spacing-sm);
-}
-
-.checkbox-label span {
-    font-size: 0.9375rem;
-    color: var(--neutral-800);
-    font-weight: 500;
-}
-
-.button-group {
-    margin-top: var(--spacing-md);
-    display: flex;
-    gap: var(--spacing-sm);
-    flex-wrap: wrap;
-}
-
-#memory-info {
-    margin-top: var(--spacing-md);
-    padding: var(--spacing-md);
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: var(--radius-md);
-    font-size: 0.8125rem;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-}
-
-#memory-info strong {
-    color: var(--primary-800);
-    font-weight: 600;
-}
 
 /* ==================== UTILITY CLASSES ==================== */
 .text-center {
@@ -777,11 +550,6 @@ section {
         page-break-inside: avoid;
         box-shadow: none;
         border: 1px solid var(--neutral-300);
-    }
-    
-    .control-panel,
-    button {
-        display: none;
     }
 }
 

@@ -1,9 +1,8 @@
-// Visualizações de impacto da pandemia
-console.log('Carregando visualizations-3.js...');
-// Nota: colors, toNumber, convertBigInt e createTooltip são definidos em visualizations-1.js e disponíveis globalmente
+// Visualizações D3.js - Impacto da Pandemia
 
-// 9. Gorjetas por tipo de pagamento - Apenas Cartão
+// Gorjetas por tipo de pagamento
 function visualizeTipsByPayment(data) {
+    const { toNumber, convertBigInt, createTooltip, colors } = window.Utils;
     const container = d3.select('#tips-by-payment');
     container.selectAll('*').remove();
     
@@ -94,20 +93,9 @@ function visualizeTipsByPayment(data) {
         .attr('fill', d => color(d.year))
         .on('mouseover', function(event, d) {
             tooltip.transition().duration(200).style('opacity', .9);
-            
-            // Nota especial para pagamentos em dinheiro
-            const cashNote = (d.type === 'Dinheiro' && d.tip === 0) 
-                ? '<p style="color: #ff9800; font-size: 12px; margin-top: 8px;"><em>⚠️ Gorjetas em dinheiro não são registradas no sistema</em></p>'
-                : '';
-            
-            // Nota explicando que é por tipo específico
-            const specificNote = '<p style="color: #666; font-size: 11px; margin-top: 6px; border-top: 1px solid #eee; padding-top: 6px;"><em>📊 Estatística específica deste método de pagamento</em></p>';
-            
             tooltip.html(`<h4>${d.type} - ${d.year}</h4>
                           <p><strong>Gorjeta Média:</strong> $${d.tip.toFixed(2)}</p>
-                          <p><strong>Percentual:</strong> ${d.pct.toFixed(1)}% da tarifa</p>
-                          ${cashNote}
-                          ${specificNote}`)
+                          <p><strong>Percentual:</strong> ${d.pct.toFixed(1)}% da tarifa</p>`)
                 .style('left', (event.pageX + 10) + 'px')
                 .style('top', (event.pageY - 28) + 'px');
         })
@@ -150,8 +138,9 @@ function visualizeTipsByPayment(data) {
         .text('Gorjeta Média ($)');
 }
 
-// 11. Mudanças de comportamento
+// Mudanças de comportamento
 function visualizeBehaviorChanges(data) {
+    const { toNumber, convertBigInt, createTooltip, colors } = window.Utils;
     const container = d3.select('#behavior-changes');
     container.selectAll('*').remove();
     
@@ -356,5 +345,3 @@ window.Visualizations3 = {
     visualizeTipsByPayment,
     visualizeBehaviorChanges
 };
-
-console.log('✅ visualizations-3.js carregado com sucesso!', window.Visualizations3);

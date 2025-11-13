@@ -69,9 +69,8 @@ async function loadData() {
         progressDiv.innerHTML = 'Inicializando DuckDB...';
         await initDuckDB();
         
-        // Configurar otimizações de performance (WebAssembly - memória limitada)
-        await conn.query(`SET memory_limit='1.5GB'`); // Limite seguro para navegador
-        await conn.query(`SET preserve_insertion_order=false`); // Permite otimizações adicionais
+        // Configurar otimizações de performance
+        await conn.query(`SET memory_limit='1.5GB'`);
         
         progressDiv.innerHTML = 'Carregando arquivos parquet...';
         
@@ -186,62 +185,35 @@ async function loadData() {
             )
         `);
         
-        console.log('ℹ️ Analisando OUT, NOV, DEZ de 2019 e 2020');
-        console.log('ℹ️ Usando 100% dos dados (sem amostragem)');
-        console.log('ℹ️ Isso pode levar alguns segundos, mas garante precisão total');
+        progressDiv.innerHTML = 'Aplicando filtros de qualidade...';
         
-        progressDiv.innerHTML = 'Aplicando regras de limpeza SIMPLIFICADAS...';
-        
-        // 2. View SIMPLIFICADA com apenas campos essenciais
+        // View otimizada com campos calculados e filtros
         await conn.query(`
-            CREATE OR REPLACE VIEW trips_with_calcs AS
+            CREATE OR REPLACE VIEW clean_trips AS
             SELECT 
                 *,
                 EXTRACT(YEAR FROM tpep_pickup_datetime) as year,
                 EXTRACT(MONTH FROM tpep_pickup_datetime) as month,
-                EXTRACT(DAY FROM tpep_pickup_datetime) as day,
                 EXTRACT(HOUR FROM tpep_pickup_datetime) as hour,
                 EXTRACT(DOW FROM tpep_pickup_datetime) as day_of_week
             FROM raw_trips
-        `);
-        
-        progressDiv.innerHTML = 'Aplicando filtros (usando VIEW otimizada)...';
-        
-        // 3. Usar VIEW em vez de TABLE para economizar memória
-        // Views não ocupam memória adicional - são calculadas sob demanda
-        await conn.query(`
-            CREATE OR REPLACE VIEW clean_trips AS
-            SELECT *
-            FROM trips_with_calcs
             WHERE 
-                -- FILTROS GLOBAIS CENTRALIZADOS
-                -- Anos válidos: apenas 2019 e 2020
                 year IN (2019, 2020)
-                -- Distância mínima: remover viagens muito curtas (< 0.01 milhas)
                 AND trip_distance >= 0.01
-                -- Filtros de qualidade
+                AND trip_distance <= 100
                 AND tpep_pickup_datetime IS NOT NULL
                 AND tpep_dropoff_datetime IS NOT NULL
                 AND tpep_dropoff_datetime > tpep_pickup_datetime
-                AND trip_distance <= 100
                 AND total_amount >= 0
                 AND fare_amount >= 0
-                AND passenger_count >= 0
-                AND passenger_count <= 6
-                AND payment_type >= 1
-                AND payment_type <= 6
+                AND passenger_count BETWEEN 0 AND 6
+                AND payment_type BETWEEN 1 AND 6
         `);
         
-        console.log('✅ View clean_trips criada com sucesso! (economia de memória)');
-        
-        progressDiv.innerHTML = `Dados carregados com sucesso! Contando registros...`;
-        
-        // Contagem final - 100% dos dados
         const countResult = await conn.query('SELECT COUNT(*) as total FROM clean_trips');
-        const totalRecords = countResult.toArray()[0].total;
-        console.log(`✅ Total de registros: ${Number(totalRecords).toLocaleString()}`);
+        const totalRecords = Number(countResult.toArray()[0].total);
         
-        progressDiv.innerHTML = `Dados carregados com sucesso! (${Number(totalRecords).toLocaleString()} registros)`;
+        progressDiv.innerHTML = `✅ ${totalRecords.toLocaleString()} registros carregados`;
         return true;
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -252,32 +224,8 @@ async function loadData() {
 
 // Executar query SQL
 async function executeQuery(query) {
-    console.log('🔍 Executando query:', query.substring(0, 50) + '...');
     const result = await conn.query(query);
-    const data = result.toArray().map(row => Object.fromEntries(row));
-    console.log(`✅ Query executada: ${data.length} registros`);
-    return data;
-}
-
-// Função auxiliar para construir cláusula WHERE
-function buildWhereClause(year, month, hasExistingWhere = false) {
-    const conditions = [];
-    
-    if (year !== 'both') {
-        conditions.push(`year = ${year}`);
-    }
-    
-    if (month !== 'all') {
-        conditions.push(`month = ${month}`);
-    }
-    
-    if (conditions.length === 0) {
-        return '';
-    }
-    
-    // Se já existe WHERE, usar AND, senão usar WHERE
-    const keyword = hasExistingWhere ? 'AND' : 'WHERE';
-    return `${keyword} ${conditions.join(' AND ')}`;
+    return result.toArray().map(row => Object.fromEntries(row));
 }
 
 // ======================================================
@@ -285,10 +233,7 @@ function buildWhereClause(year, month, hasExistingWhere = false) {
 // ======================================================
 
 // Padrões temporais
-async function getTemporalPatterns(year = 'both', month = 'all') {
-    let whereClause = buildWhereClause(year, month);
-    
-    // Padrão por hora do dia - DADOS COMPLETOS
+async function getTemporalPatterns() {
     const hourlyPattern = await executeQuery(`
         SELECT 
             hour,
@@ -296,12 +241,10 @@ async function getTemporalPatterns(year = 'both', month = 'all') {
             COUNT(*) as trips,
             ROUND(AVG(total_amount), 2) as avg_fare
         FROM clean_trips
-        ${whereClause}
         GROUP BY hour, year
         ORDER BY hour, year
     `);
     
-    // Padrão por dia da semana - DADOS COMPLETOS e nome do dia
     const weeklyPattern = await executeQuery(`
         SELECT 
             day_of_week,
@@ -318,7 +261,6 @@ async function getTemporalPatterns(year = 'both', month = 'all') {
             COUNT(*) as trips,
             ROUND(AVG(total_amount), 2) as avg_fare
         FROM clean_trips
-        ${whereClause}
         GROUP BY day_of_week, year
         ORDER BY day_of_week, year
     `);
@@ -327,10 +269,7 @@ async function getTemporalPatterns(year = 'both', month = 'all') {
 }
 
 // Análise de tarifas
-async function getFareAnalysis(year = 'both', month = 'all') {
-    let whereClause = buildWhereClause(year, month);
-    
-    // Composição completa da tarifa com TODOS os componentes
+async function getFareAnalysis() {
     const fareComposition = await executeQuery(`
         SELECT 
             year,
@@ -344,7 +283,6 @@ async function getFareAnalysis(year = 'both', month = 'all') {
             ROUND(AVG(COALESCE(airport_fee, 0)), 2) as airport_fee,
             ROUND(AVG(total_amount), 2) as total
         FROM clean_trips
-        ${whereClause}
         GROUP BY year
     `);
     
@@ -352,10 +290,7 @@ async function getFareAnalysis(year = 'both', month = 'all') {
 }
 
 // Análise de pagamentos
-async function getPaymentAnalysis(year = 'both', month = 'all') {
-    let whereClause = buildWhereClause(year, month);
-    
-    // Distribuição básica por tipo de pagamento - DADOS COMPLETOS
+async function getPaymentAnalysis() {
     const paymentDist = await executeQuery(`
         SELECT 
             year,
@@ -372,12 +307,10 @@ async function getPaymentAnalysis(year = 'both', month = 'all') {
             COUNT(*) as count,
             ROUND(AVG(total_amount), 2) as avg_amount
         FROM clean_trips
-        ${whereClause}
         GROUP BY year, payment_type
         ORDER BY year, count DESC
     `);
     
-    // Gorjetas por tipo de pagamento - DADOS COMPLETOS e nomes
     const tipsByPayment = await executeQuery(`
         SELECT 
             year,
@@ -391,7 +324,6 @@ async function getPaymentAnalysis(year = 'both', month = 'all') {
             ROUND(AVG(tip_amount / NULLIF(total_amount, 0) * 100), 2) as tip_percentage,
             COUNT(*) as count
         FROM clean_trips
-        ${whereClause}
         GROUP BY year, payment_type
         ORDER BY year, payment_type
     `);
@@ -400,10 +332,7 @@ async function getPaymentAnalysis(year = 'both', month = 'all') {
 }
 
 // Análise de impacto da pandemia
-async function getPandemicImpact(year = 'both', month = 'all') {
-    let whereClause = buildWhereClause(year, month);
-    
-    // Mudanças de comportamento - DADOS COMPLETOS e campos completos
+async function getPandemicImpact() {
     const behaviorChanges = await executeQuery(`
         SELECT 
             year,
@@ -414,7 +343,6 @@ async function getPandemicImpact(year = 'both', month = 'all') {
             ROUND(AVG(tip_amount / NULLIF(total_amount, 0) * 100), 2) as avg_tip_pct,
             COUNT(*) as total_trips
         FROM clean_trips
-        ${whereClause}
         GROUP BY year
     `);
     
