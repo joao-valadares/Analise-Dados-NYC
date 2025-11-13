@@ -2,7 +2,7 @@
 console.log('Carregando visualizations-3.js...');
 // Nota: colors, toNumber, convertBigInt e createTooltip são definidos em visualizations-1.js e disponíveis globalmente
 
-// 9. Gorjetas por tipo de pagamento
+// 9. Gorjetas por tipo de pagamento - Apenas Cartão
 function visualizeTipsByPayment(data) {
     const container = d3.select('#tips-by-payment');
     container.selectAll('*').remove();
@@ -17,23 +17,17 @@ function visualizeTipsByPayment(data) {
         .append('g')
         .attr('transform', `translate(${margin.left},${margin.top})`);
     
-    // Preparar dados (converter BigInt)
-    const cleanData = data.map(convertBigInt);
-    const paymentTypes = [...new Set(cleanData.map(d => d.payment_name))];
+    // Preparar dados (converter BigInt) - FILTRAR APENAS CARTÃO
+    const cleanData = data.map(convertBigInt).filter(d => d.payment_name === 'Cartão');
     const groupedData = d3.group(cleanData, d => d.payment_name);
     
-    const chartData = paymentTypes.map(type => {
-        const typeData = groupedData.get(type) || [];
-        return {
-            type: type,
-            tip2019: toNumber(typeData.find(d => d.year === 2019)?.avg_tip || 0),
-            tip2020: toNumber(typeData.find(d => d.year === 2020)?.avg_tip || 0),
-            pct2019: toNumber(typeData.find(d => d.year === 2019)?.tip_percentage || 0),
-            pct2020: toNumber(typeData.find(d => d.year === 2020)?.tip_percentage || 0)
-        };
-    })
-    // Filtrar apenas "Outro" com 0 gorjetas, mas manter Cartão e Dinheiro
-    .filter(d => d.type === 'Cartão' || d.type === 'Dinheiro' || d.tip2019 > 0 || d.tip2020 > 0);
+    const chartData = [{
+        type: 'Cartão',
+        tip2019: toNumber(cleanData.find(d => d.year === 2019)?.avg_tip || 0),
+        tip2020: toNumber(cleanData.find(d => d.year === 2020)?.avg_tip || 0),
+        pct2019: toNumber(cleanData.find(d => d.year === 2019)?.tip_percentage || 0),
+        pct2020: toNumber(cleanData.find(d => d.year === 2020)?.tip_percentage || 0)
+    }];
     
     // Escalas
     const x0 = d3.scaleBand()
@@ -154,16 +148,6 @@ function visualizeTipsByPayment(data) {
         .attr('dy', '1em')
         .style('text-anchor', 'middle')
         .text('Gorjeta Média ($)');
-    
-    // Nota explicativa sobre gorjetas em dinheiro
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', height + 85)
-        .style('text-anchor', 'middle')
-        .style('font-size', '11px')
-        .style('fill', '#ff9800')
-        .style('font-style', 'italic')
-        .text('⚠️ Gorjetas em dinheiro não são registradas no sistema de pagamento');
 }
 
 // 11. Mudanças de comportamento
@@ -366,18 +350,11 @@ function visualizeBehaviorChanges(data) {
     });
 }
 
-// Funções removidas - não são mais utilizadas:
-// - visualizeDataQuality
-// - visualizeDataRemoval  
-// - visualizePaymentTrend
-// - visualizePandemicVolume
 
 // Exportar funções
 window.Visualizations3 = {
     visualizeTipsByPayment,
     visualizeBehaviorChanges
 };
-
-console.log('✅ visualizations-3.js carregado com sucesso!', window.Visualizations3);
 
 console.log('✅ visualizations-3.js carregado com sucesso!', window.Visualizations3);

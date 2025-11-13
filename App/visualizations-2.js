@@ -162,8 +162,8 @@ function visualizeFareComposition(data) {
         .text('Valor Médio ($)');
 }
 
-// 7. Correlação Distância vs Tarifa (Scatter plot)
-function visualizeDistanceFareCorrelation(data) {
+// 8. Distribuição de pagamentos (Donut Chart)
+function visualizePaymentDistribution(data) {
     const container = d3.select('#distance-fare-correlation');
     container.selectAll('*').remove();
     
@@ -496,163 +496,8 @@ function visualizePaymentDistribution(data) {
     });
 }
 
-// 9. Histograma de Distância
-function visualizeDistanceHistogram(data) {
-    console.log('📊 visualizeDistanceHistogram - Dados recebidos:', data.length, 'registros');
-    console.log('📊 Amostra dos dados:', data.slice(0, 5));
-    
-    const container = d3.select('#distance-histogram');
-    container.selectAll('*').remove();
-    
-    const margin = {top: 20, right: 80, bottom: 60, left: 80};
-    const width = container.node().getBoundingClientRect().width - margin.left - margin.right;
-    const height = 400 - margin.top - margin.bottom;
-    
-    const svg = container.append('svg')
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-        .attr('transform', `translate(${margin.left},${margin.top})`);
-    
-    // Preparar dados PRÉ-AGREGADOS (já vem com contagem do SQL)
-    const cleanData = data.map(d => ({
-        distance: toNumber(d.trip_distance),
-        year: toNumber(d.year),
-        frequency: toNumber(d.frequency) || 1
-    })).filter(d => {
-        // Filtro de ano não é mais necessário - dados já vêm filtrados da VIEW clean_trips
-        return !isNaN(d.distance) && 
-               d.distance >= 0 && 
-               d.distance <= 20;
-    });
-    
-    console.log('📊 visualizeDistanceHistogram - Dados limpos:', cleanData.length, 'bins agregados');
-    console.log('📊 Amostra dos dados limpos:', cleanData.slice(0, 5));
-    
-    if (cleanData.length === 0) {
-        console.error('❌ Nenhum dado válido para histograma de distância');
-        return;
-    }
-    
-    // Agrupar por ano
-    const data2019 = cleanData.filter(d => d.year === 2019);
-    const data2020 = cleanData.filter(d => d.year === 2020);
-    
-    // Criar bins manualmente com os dados pré-agregados
-    const bins2019 = data2019.map(d => ({
-        x0: d.distance,
-        x1: d.distance + 0.5,
-        length: d.frequency
-    }));
-    
-    const bins2020 = data2020.map(d => ({
-        x0: d.distance,
-        x1: d.distance + 0.5,
-        length: d.frequency
-    }));
-    
-    // Escalas
-    const x = d3.scaleLinear()
-        .domain([0, 20])
-        .range([0, width]);
-    
-    const y = d3.scaleLinear()
-        .domain([0, d3.max([...bins2019, ...bins2020], d => d.length)])
-        .nice()
-        .range([height, 0]);
-    
-    const color = d3.scaleOrdinal()
-        .domain([2019, 2020])
-        .range([colors.year2019, colors.year2020]);
-    
-    // Grade
-    svg.append('g')
-        .attr('class', 'grid')
-        .call(d3.axisLeft(y).tickSize(-width).tickFormat(''));
-    
-    // Eixos
-    svg.append('g')
-        .attr('class', 'axis')
-        .attr('transform', `translate(0,${height})`)
-        .call(d3.axisBottom(x).tickFormat(d => d + ' mi'));
-    
-    svg.append('g')
-        .attr('class', 'axis')
-        .call(d3.axisLeft(y).tickFormat(d => d3.format('.2s')(d)));
-    
-    // Barras 2019
-    svg.selectAll('.bar-2019')
-        .data(bins2019)
-        .enter().append('rect')
-        .attr('class', 'bar bar-2019')
-        .attr('x', d => x(d.x0))
-        .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 1))
-        .attr('y', height)
-        .attr('height', 0)
-        .attr('fill', color(2019))
-        .attr('opacity', 0.6)
-        .transition()
-        .duration(800)
-        .attr('y', d => y(d.length))
-        .attr('height', d => height - y(d.length));
-    
-    // Barras 2020
-    svg.selectAll('.bar-2020')
-        .data(bins2020)
-        .enter().append('rect')
-        .attr('class', 'bar bar-2020')
-        .attr('x', d => x(d.x0))
-        .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 1))
-        .attr('y', height)
-        .attr('height', 0)
-        .attr('fill', color(2020))
-        .attr('opacity', 0.6)
-        .transition()
-        .duration(800)
-        .attr('y', d => y(d.length))
-        .attr('height', d => height - y(d.length));
-    
-    // Legenda
-    const legend = svg.append('g')
-        .attr('class', 'legend')
-        .attr('transform', `translate(${width - 100}, 20)`);
-    
-    [2019, 2020].forEach((year, i) => {
-        const lg = legend.append('g')
-            .attr('transform', `translate(0, ${i * 25})`);
-        
-        lg.append('rect')
-            .attr('width', 18)
-            .attr('height', 18)
-            .attr('fill', color(year))
-            .attr('opacity', 0.6);
-        
-        lg.append('text')
-            .attr('x', 24)
-            .attr('y', 9)
-            .attr('dy', '.35em')
-            .text(year);
-    });
-    
-    // Títulos
-    svg.append('text')
-        .attr('x', width / 2)
-        .attr('y', height + 50)
-        .attr('text-anchor', 'middle')
-        .text('Distância da Viagem (milhas)');
-    
-    svg.append('text')
-        .attr('transform', 'rotate(-90)')
-        .attr('y', -margin.left + 20)
-        .attr('x', -height / 2)
-        .attr('text-anchor', 'middle')
-        .text('Frequência');
-}
-
 // Exportar funções
 window.Visualizations2 = {
     visualizeFareComposition,
-    visualizeDistanceFareCorrelation,
-    visualizePaymentDistribution,
-    visualizeDistanceHistogram
+    visualizePaymentDistribution
 };

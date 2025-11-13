@@ -280,50 +280,10 @@ async function executeQuery(query, useCache = true) {
     return data;
 }
 
-// Limpar cache (útil para atualização de filtros)
+// Limpar cache (útil para atualização de dados)
 function clearCache() {
     queryCache.clear();
     console.log('🧹 Cache limpo completamente');
-}
-
-// Limpar cache seletivamente baseado nas seções carregadas
-function clearCacheForSections(sectionsToLoad) {
-    const sectionsToKeep = [];
-    
-    // Identificar padrões de query por seção
-    const sectionPatterns = {
-        quality: ['recordsByMonth', 'qualityStats', 'COUNT(*) as total FROM raw_trips', 'COUNT(*) as total FROM clean_trips'],
-        temporal: ['hourlyPattern', 'weeklyPattern', 'monthlyTrend', 'hourDayHeatmap'],
-        trip: ['distanceHistogram', 'passengerDistribution'],
-        fare: ['fareComposition', 'fareDistribution', 'distanceFareCorr'],
-        payment: ['paymentDist', 'paymentTrend', 'tipsByPayment'],
-        pandemic: ['volumeComparison', 'behaviorChanges']
-    };
-    
-    // Coletar padrões das seções que serão mantidas
-    Object.keys(sectionsToLoad).forEach(section => {
-        if (sectionsToLoad[section] && sectionPatterns[section]) {
-            sectionsToKeep.push(...sectionPatterns[section]);
-        }
-    });
-    
-    // Limpar apenas entradas que não pertencem às seções mantidas
-    let removed = 0;
-    const keysToRemove = [];
-    
-    for (const [key, value] of queryCache.entries()) {
-        const shouldKeep = sectionsToKeep.some(pattern => key.includes(pattern));
-        if (!shouldKeep) {
-            keysToRemove.push(key);
-        }
-    }
-    
-    keysToRemove.forEach(key => {
-        queryCache.delete(key);
-        removed++;
-    });
-    
-    console.log(`🧹 Cache limpo: ${removed} entrada(s) removida(s), ${queryCache.size} mantida(s)`);
 }
 
 // Função auxiliar para construir cláusula WHERE
@@ -350,73 +310,6 @@ function buildWhereClause(year, month, hasExistingWhere = false) {
 // ======================================================
 // FUNÇÕES DE ANÁLISE
 // ======================================================
-
-// Análise de qualidade dos dados
-async function getDataQuality(year = 'both', month = 'all') {
-    let whereClause = buildWhereClause(year, month);
-    
-    // Contagem de registros brutos
-    const rawCount = await executeQuery(`
-        SELECT COUNT(*) as total
-        FROM raw_trips
-        ${whereClause ? whereClause.replace('year', 'EXTRACT(YEAR FROM tpep_pickup_datetime)').replace('month', 'EXTRACT(MONTH FROM tpep_pickup_datetime)') : ''}
-    `);
-    
-    // Contagem de registros limpos
-    const cleanCount = await executeQuery(`
-        SELECT COUNT(*) as total
-        FROM clean_trips
-        ${whereClause}
-    `);
-    
-    // Estatísticas SIMPLIFICADAS de remoção
-    const removalStats = await executeQuery(`
-        SELECT 
-            'Registros removidos' as rule,
-            (SELECT COUNT(*) FROM raw_trips) - (SELECT COUNT(*) FROM clean_trips) as removed_count
-    `);
-    
-    // Registros por mês (limpos) - DADOS COMPLETOS
-    const recordsByMonth = await executeQuery(`
-        SELECT 
-            year,
-            month,
-            COUNT(*) as count
-        FROM clean_trips
-        ${whereClause}
-        GROUP BY year, month
-        ORDER BY year, month
-    `);
-    
-    // Estatísticas básicas de qualidade
-    const qualityStats = await executeQuery(`
-        SELECT 
-            'Total Viagens Limpas' as metric,
-            CAST(COUNT(*) as DOUBLE) as value
-        FROM clean_trips
-        ${whereClause}
-        UNION ALL
-        SELECT 
-            'Distância Média (mi)',
-            ROUND(AVG(trip_distance), 2)
-        FROM clean_trips
-        ${whereClause}
-        UNION ALL
-        SELECT 
-            'Tarifa Média ($)',
-            ROUND(AVG(total_amount), 2)
-        FROM clean_trips
-        ${whereClause}
-    `);
-    
-    return { 
-        recordsByMonth, 
-        qualityStats, 
-        removalStats,
-        rawCount: rawCount[0]?.total || 0,
-        cleanCount: cleanCount[0]?.total || 0
-    };
-}
 
 // Padrões temporais
 async function getTemporalPatterns(year = 'both', month = 'all') {
@@ -457,38 +350,10 @@ async function getTemporalPatterns(year = 'both', month = 'all') {
         ORDER BY day_of_week, year
     `);
     
-    // Heatmap: hora x dia da semana - DADOS COMPLETOS e por ANO
-    const hourDayHeatmap = await executeQuery(`
-        SELECT 
-            hour,
-            day_of_week,
-            year,
-            COUNT(*) as trips,
-            ROUND(AVG(total_amount), 2) as avg_fare
-        FROM clean_trips
-        ${whereClause}
-        GROUP BY hour, day_of_week, year
-        ORDER BY year, day_of_week, hour
-    `);
-    
-    // Tendência mensal - DADOS COMPLETOS e campos completos
-    const monthlyTrend = await executeQuery(`
-        SELECT 
-            year,
-            month,
-            COUNT(*) as trips,
-            ROUND(AVG(total_amount), 2) as avg_fare,
-            ROUND(SUM(total_amount), 2) as total_revenue
-        FROM clean_trips
-        ${whereClause}
-        GROUP BY year, month
-        ORDER BY year, month
-    `);
-    
-    return { hourlyPattern, weeklyPattern, hourDayHeatmap, monthlyTrend };
+    return { hourlyPattern, weeklyPattern };
 }
 
-// Análise de tarifas - SIMPLIFICADO
+// Análise de tarifas
 async function getFareAnalysis(year = 'both', month = 'all') {
     let whereClause = buildWhereClause(year, month);
     
@@ -510,80 +375,10 @@ async function getFareAnalysis(year = 'both', month = 'all') {
         GROUP BY year
     `);
     
-    // Distribuição de tarifas
-    const fareDistribution = await executeQuery(`
-        SELECT 
-            year,
-            CASE 
-                WHEN total_amount < 10 THEN '0-10'
-                WHEN total_amount < 20 THEN '10-20'
-                WHEN total_amount < 30 THEN '20-30'
-                ELSE '30+'
-            END as fare_range,
-            COUNT(*) as count
-        FROM clean_trips
-        ${whereClause}
-        GROUP BY year, fare_range
-        ORDER BY year, fare_range
-    `);
-    
-    // Correlação Distância x Tarifa - OTIMIZADO (Agregação + Amostragem)
-    // ESTRATÉGIA 1: Agregação por bins de 0.1 milhas (reduz de milhões para ~400 pontos)
-    const distanceFareCorr = await executeQuery(`
-        SELECT 
-            ROUND(trip_distance * 10) / 10 as trip_distance,
-            year,
-            ROUND(AVG(total_amount), 2) as total_amount,
-            COUNT(*) as trip_count,
-            ROUND(MIN(total_amount), 2) as min_fare,
-            ROUND(MAX(total_amount), 2) as max_fare,
-            ROUND(STDDEV(total_amount), 2) as fare_stddev
-        FROM clean_trips
-        WHERE trip_distance <= 20
-            AND trip_distance >= 0.1
-            AND total_amount <= 200
-            AND total_amount >= 2.5
-            ${whereClause ? whereClause.replace('WHERE', 'AND') : ''}
-        GROUP BY ROUND(trip_distance * 10) / 10, year
-        ORDER BY trip_distance, year
-    `);
-    
-    return { fareComposition, fareDistribution, distanceFareCorr };
+    return { fareComposition };
 }
 
-// Perfil de viagem - COMPLETO
-async function getTripProfile(year = 'both', month = 'all') {
-    let whereClause = buildWhereClause(year, month);
-    
-    // Histograma de distâncias (pré-agregado) - DADOS COMPLETOS
-    const distanceHistogram = await executeQuery(`
-        SELECT 
-            FLOOR(trip_distance * 2) / 2 as trip_distance,
-            year,
-            COUNT(*) as frequency
-        FROM clean_trips
-        WHERE trip_distance <= 20
-            ${whereClause ? whereClause.replace('WHERE', 'AND') : ''}
-        GROUP BY FLOOR(trip_distance * 2) / 2, year
-        ORDER BY trip_distance, year
-    `);
-    
-    // Distribuição de passageiros - DADOS COMPLETOS
-    const passengerDistribution = await executeQuery(`
-        SELECT 
-            year,
-            passenger_count,
-            COUNT(*) as count
-        FROM clean_trips
-        ${whereClause}
-        GROUP BY year, passenger_count
-        ORDER BY year, passenger_count
-    `);
-    
-    return { distanceHistogram, passengerDistribution };
-}
-
-// Análise de pagamentos - SIMPLIFICADO
+// Análise de pagamentos
 async function getPaymentAnalysis(year = 'both', month = 'all') {
     let whereClause = buildWhereClause(year, month);
     
@@ -609,43 +404,6 @@ async function getPaymentAnalysis(year = 'both', month = 'all') {
         ORDER BY year, count DESC
     `);
     
-    // Tendência de pagamentos - DADOS COMPLETOS e percentual
-    const paymentTrend = await executeQuery(`
-        WITH payment_counts AS (
-            SELECT 
-                year,
-                month,
-                payment_type,
-                CASE payment_type
-                    WHEN 1 THEN 'Cartão'
-                    WHEN 2 THEN 'Dinheiro'
-                    ELSE 'Outro'
-                END as payment_name,
-                COUNT(*) as count
-            FROM clean_trips
-            ${whereClause}
-            GROUP BY year, month, payment_type
-        ),
-        month_totals AS (
-            SELECT 
-                year,
-                month,
-                SUM(count) as total
-            FROM payment_counts
-            GROUP BY year, month
-        )
-        SELECT 
-            pc.year,
-            pc.month,
-            pc.payment_type,
-            pc.payment_name,
-            pc.count,
-            ROUND(CAST(pc.count AS DOUBLE) / mt.total * 100, 2) as percentage
-        FROM payment_counts pc
-        JOIN month_totals mt ON pc.year = mt.year AND pc.month = mt.month
-        ORDER BY pc.year, pc.month, pc.payment_type
-    `);
-    
     // Gorjetas por tipo de pagamento - DADOS COMPLETOS e nomes
     const tipsByPayment = await executeQuery(`
         SELECT 
@@ -665,26 +423,12 @@ async function getPaymentAnalysis(year = 'both', month = 'all') {
         ORDER BY year, payment_type
     `);
     
-    return { paymentDist, paymentTrend, tipsByPayment };
+    return { paymentDist, tipsByPayment };
 }
 
-// Análise de impacto da pandemia - DADOS COMPLETOS
+// Análise de impacto da pandemia
 async function getPandemicImpact(year = 'both', month = 'all') {
     let whereClause = buildWhereClause(year, month);
-    
-    // Comparação de volume mensal - DADOS COMPLETOS
-    const volumeComparison = await executeQuery(`
-        SELECT 
-            year,
-            month,
-            COUNT(*) as trips,
-            ROUND(AVG(trip_distance), 2) as avg_distance,
-            ROUND(AVG(total_amount), 2) as avg_fare
-        FROM clean_trips
-        ${whereClause}
-        GROUP BY year, month
-        ORDER BY month, year
-    `);
     
     // Mudanças de comportamento - DADOS COMPLETOS e campos completos
     const behaviorChanges = await executeQuery(`
@@ -701,7 +445,7 @@ async function getPandemicImpact(year = 'both', month = 'all') {
         GROUP BY year
     `);
     
-    return { volumeComparison, behaviorChanges };
+    return { behaviorChanges };
 }
 
 // ======================================================
@@ -711,11 +455,8 @@ window.TaxiAnalysis = {
     loadData,
     executeQuery,
     clearCache,
-    clearCacheForSections,
-    getDataQuality,
     getTemporalPatterns,
     getFareAnalysis,
-    getTripProfile,
     getPaymentAnalysis,
     getPandemicImpact
 };

@@ -55,37 +55,26 @@ async function updateVisualizations() {
         // ===================================================
         // 1. ANÁLISE TEMPORAL
         // ===================================================
-        console.log('⏰ [1/5] Carregando análise temporal...');
+        console.log('⏰ [1/4] Carregando análise temporal...');
         const temporal = await window.TaxiAnalysis.getTemporalPatterns(currentYear, currentMonth);
         
         document.getElementById('temporal-analysis').style.display = 'block';
-        window.Visualizations.visualizeHourDayHeatmap(temporal.hourDayHeatmap);
         window.Visualizations.visualizeHourlyPattern(temporal.hourlyPattern);
         window.Visualizations.visualizeWeeklyPattern(temporal.weeklyPattern);
         
         // ===================================================
-        // 2. PERFIL DE VIAGEM
+        // 2. ANÁLISE DE TARIFAS
         // ===================================================
-        console.log('🚕 [2/5] Carregando perfil de viagem...');
-        const tripProfile = await window.TaxiAnalysis.getTripProfile(currentYear, currentMonth);
-        
-        document.getElementById('trip-profile').style.display = 'block';
-        window.Visualizations2.visualizeDistanceHistogram(tripProfile.distanceHistogram);
-        
-        // ===================================================
-        // 3. ANÁLISE DE TARIFAS
-        // ===================================================
-        console.log('💰 [3/5] Carregando análise de tarifas...');
+        console.log('💰 [2/4] Carregando análise de tarifas...');
         const fare = await window.TaxiAnalysis.getFareAnalysis(currentYear, currentMonth);
         
         document.getElementById('fare-analysis').style.display = 'block';
         window.Visualizations2.visualizeFareComposition(fare.fareComposition);
-        window.Visualizations2.visualizeDistanceFareCorrelation(fare.distanceFareCorr);
         
         // ===================================================
-        // 4. MÉTODOS DE PAGAMENTO
+        // 3. MÉTODOS DE PAGAMENTO
         // ===================================================
-        console.log('💳 [4/5] Carregando análise de pagamentos...');
+        console.log('💳 [3/4] Carregando análise de pagamentos...');
         const payment = await window.TaxiAnalysis.getPaymentAnalysis(currentYear, currentMonth);
         
         document.getElementById('payment-analysis').style.display = 'block';
@@ -93,9 +82,9 @@ async function updateVisualizations() {
         window.Visualizations3.visualizeTipsByPayment(payment.tipsByPayment);
         
         // ===================================================
-        // 5. IMPACTO DA PANDEMIA
+        // 4. IMPACTO DA PANDEMIA
         // ===================================================
-        console.log('🦠 [5/5] Carregando análise de impacto da pandemia...');
+        console.log('🦠 [4/4] Carregando análise de impacto da pandemia...');
         const pandemic = await window.TaxiAnalysis.getPandemicImpact(currentYear, currentMonth);
         
         document.getElementById('pandemic-impact').style.display = 'block';

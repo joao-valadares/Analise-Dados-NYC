@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise de Táxis NYC - 2019/2020</title>
     <link rel="icon" href="data:,">
-    <!-- Google Fonts - Inter (Corporate Typography) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -31,10 +30,6 @@
             <h2>1. Análise Temporal - Dinâmica da Demanda</h2>
             <div class="viz-container">
                 <div class="viz-item full-width">
-                    <h3>Heatmap: Padrão Hora x Dia da Semana (2019 vs 2020)</h3>
-                    <div id="hour-day-heatmap"></div>
-                </div>
-                <div class="viz-item full-width">
                     <h3>Corridas por Hora do Dia</h3>
                     <div id="hourly-pattern"></div>
                 </div>
@@ -45,50 +40,32 @@
             </div>
         </section>
 
-        <section id="trip-profile" style="display: none;">
-            <h2>2. Perfil de Viagem - Distância e Passageiros</h2>
+        <section id="fare-analysis" style="display: none;">
+            <h2>2. Análise de Tarifas - Composição e Distribuição</h2>
             <div class="viz-container">
                 <div class="viz-item full-width">
-                    <h3>Histograma de Distância das Viagens</h3>
-                    <div id="distance-histogram"></div>
-                </div>
-            </div>
-        </section>
-
-        <section id="fare-analysis" style="display: none;">
-            <h2>3. Análise de Tarifas - Composição e Distribuição</h2>
-            <div class="viz-container">
-                <div class="viz-item">
                     <h3>Composição Média das Tarifas (Componentes)</h3>
                     <div id="fare-composition"></div>
-                </div>
-                <div class="viz-item full-width">
-                    <h3>Correlação: Distância vs Tarifa</h3>
-                    <div class="info-note" style="background: #e3f2fd; padding: 10px 12px; border-radius: 6px; margin-bottom: 15px; line-height: 1.5; font-size: 14px;">
-                        <strong>ℹ️ Otimização:</strong> Os dados são agregados em bins de 0.1 milhas para melhor desempenho. 
-                        O <strong>tamanho dos círculos</strong> representa o volume de viagens em cada faixa de distância.
-                    </div>
-                    <div id="distance-fare-correlation"></div>
                 </div>
             </div>
         </section>
 
         <section id="payment-analysis" style="display: none;">
-            <h2>4. Métodos de Pagamento e Gorjetas</h2>
+            <h2>3. Métodos de Pagamento e Gorjetas</h2>
             <div class="viz-container">
                 <div class="viz-item">
                     <h3>Distribuição por Tipo de Pagamento</h3>
                     <div id="payment-distribution"></div>
                 </div>
                 <div class="viz-item">
-                    <h3>Gorjetas Médias por Método de Pagamento (Separado por Tipo)</h3>
+                    <h3>Gorjetas Médias - Pagamento com Cartão</h3>
                     <div id="tips-by-payment"></div>
                 </div>
             </div>
         </section>
 
         <section id="pandemic-impact" style="display: none;">
-            <h2>5. Impacto da Pandemia - Comparação 2019 vs 2020</h2>
+            <h2>4. Impacto da Pandemia - Comparação 2019 vs 2020</h2>
             <div class="viz-container">
                 <div class="viz-item full-width">
                     <h3>Mudanças de Comportamento (Métricas Agregadas)</h3>
