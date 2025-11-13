@@ -250,40 +250,13 @@ async function loadData() {
     }
 }
 
-// ======================================================
-// SISTEMA DE CACHE PARA EVITAR QUERIES DUPLICADAS
-// ======================================================
-const queryCache = new Map();
-
-// Executar query com cache
-async function executeQuery(query, useCache = true) {
-    // Criar chave única baseada na query
-    const cacheKey = query.trim();
-    
-    // Verificar se resultado está em cache
-    if (useCache && queryCache.has(cacheKey)) {
-        console.log('📦 Cache hit:', cacheKey.substring(0, 50) + '...');
-        return queryCache.get(cacheKey);
-    }
-    
-    // Executar query
-    console.log('🔍 Executando query:', cacheKey.substring(0, 50) + '...');
+// Executar query SQL
+async function executeQuery(query) {
+    console.log('🔍 Executando query:', query.substring(0, 50) + '...');
     const result = await conn.query(query);
     const data = result.toArray().map(row => Object.fromEntries(row));
-    
-    // Armazenar em cache
-    if (useCache) {
-        queryCache.set(cacheKey, data);
-        console.log(`✅ Resultado armazenado em cache (${data.length} registros)`);
-    }
-    
+    console.log(`✅ Query executada: ${data.length} registros`);
     return data;
-}
-
-// Limpar cache (útil para atualização de dados)
-function clearCache() {
-    queryCache.clear();
-    console.log('🧹 Cache limpo completamente');
 }
 
 // Função auxiliar para construir cláusula WHERE
@@ -453,8 +426,6 @@ async function getPandemicImpact(year = 'both', month = 'all') {
 // ======================================================
 window.TaxiAnalysis = {
     loadData,
-    executeQuery,
-    clearCache,
     getTemporalPatterns,
     getFareAnalysis,
     getPaymentAnalysis,
